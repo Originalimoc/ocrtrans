@@ -6,7 +6,7 @@ use anyhow::Result;
 use serde_json::Value;
 use futures::StreamExt;
 
-pub(crate) async fn translate_openai(api_endpoint: &str, api_key: &Option<String>, request: &TranslateRequest) -> Result<String> {
+pub(crate) async fn translate_openai(api_endpoint: &str, api_key: &Option<String>, request: &TranslateRequest, steaming_output_async_channel: Option<tokio::sync::mpsc::Sender<String>>, steaming_output_sync_channel: Option<std::sync::mpsc::Sender<String>>) -> Result<String> {
 	let payload = new_translate_json(request);
 	 let http_client = if let Some(api_key) = api_key {
 		Client::new()
@@ -22,7 +22,9 @@ pub(crate) async fn translate_openai(api_endpoint: &str, api_key: &Option<String
     let mut concatenated_result = String::new();
 	while let Some(event) = es.next().await {
 		match event {
-			Ok(Event::Open) => { println!("\nStreaming Output:") },
+			Ok(Event::Open) => {
+				// println!("\nStreaming Output:")
+			},
 			Ok(Event::Message(message)) => {
 				let value: Value = serde_json::from_str(&message.data).unwrap();
 				let completion: Completion = serde_json::from_value(value).unwrap();
@@ -30,7 +32,16 @@ pub(crate) async fn translate_openai(api_endpoint: &str, api_key: &Option<String
 				for choice in completion.choices {
 					let content = choice.message.content;
 					if !content.replace(['\n', ' '], "").is_empty() {
-						print!("{}", content);
+						if let Some(ref channel) = steaming_output_sync_channel {
+							if let Err(e) = channel.send(content.clone()) {
+								eprintln!("steaming_output_sync_channel error: {}", e);
+							}
+						}
+						if let Some(ref channel) = steaming_output_async_channel {
+							if let Err(e) = channel.send(content.clone()).await {
+								eprintln!("steaming_output_async_channel error: {}", e);
+							}
+						}
 						let _ = std::io::stdout().flush();
 						concatenated_result.push_str(&content);
 					}
@@ -39,7 +50,7 @@ pub(crate) async fn translate_openai(api_endpoint: &str, api_key: &Option<String
 			Err(err) => {
 				es.close();
 				if let reqwest_eventsource::Error::StreamEnded = err {
-					println!("\n/Streaming Output Done.\n")
+					// println!("\n/Streaming Output Done.\n")
 				} else {
 					return Err(err)?;
 				}

@@ -1728,6 +1728,7 @@ dependencies = [
  "serde_json",
  "tesseract",
  "tokio",
+ "windows 0.52.0",
 ]
 
 [[package]]
