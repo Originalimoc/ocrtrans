@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 tesseract = "0.15"
 openssl = "0.10"
-screenshots = { version = "0.8", git = "https://github.com/Originalimoc/screenshots-rs-fix", rev = "cdf9f00" }
+screenshots = { git = "https://github.com/Originalimoc/screenshots-rs-fix", rev = "e9917e1" }
 rusty-xinput = "1.3"
 clap = { version = "4", features = ["derive"] }
 reqwest = { version = "0.11", features = ["json"] }
@@ -21,8 +21,8 @@ anyhow = "1"
 livesplit-hotkey = "0.7"
 notify-rust = "4"
 
-#image = "0.24"
-#imageproc = "0.23"
+# image = "0.24"
+# imageproc = "0.23"
 
 [profile.release]
 codegen-units = 1

@@ -28,9 +28,9 @@ dependencies = [
 
 [[package]]
 name = "anstream"
-version = "0.6.5"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d664a92ecae85fd0a7392615844904654d1d5f5514837f471ddef4a057aba1b6"
+checksum = "4cd2405b3ac1faab2990b74d728624cd9fd115651fcecc7c2d8daf01376275ba"
 dependencies = [
  "anstyle",
  "anstyle-parse",
@@ -280,9 +280,9 @@ dependencies = [
 
 [[package]]
 name = "base64"
-version = "0.21.6"
+version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c79fed4cdb43e993fcdadc7e58a09fd0e3e649c4436fa11da71c9f1f3ee7feb9"
+checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
 
 [[package]]
 name = "bindgen"
@@ -428,9 +428,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.4.14"
+version = "4.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33e92c5c1a78c62968ec57dbc2440366a2d6e5a23faf829970ff1585dc6b18e2"
+checksum = "58e54881c004cec7895b0068a0a954cd5d62da01aef83fa35b1e594497bf5445"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -438,9 +438,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.4.14"
+version = "4.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4323769dc8a61e2c39ad7dc26f6f2800524691a44d74fe3d1071a5c24db6370"
+checksum = "59cb82d7f531603d2fd1f507441cdd35184fa81beff7bd489570de7f773460bb"
 dependencies = [
  "anstream",
  "anstyle",
@@ -663,9 +663,9 @@ dependencies = [
 
 [[package]]
 name = "display-info"
-version = "0.4.6"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "caafa270744ebc8bc91c98d73a1005d17a2e94c6738a8da7d9dd8e7e46fcbcdd"
+checksum = "4ba4b5ddb26d674c9cd40b7a747e42658ffe1289843615b838532f660e0e3dd0"
 dependencies = [
  "anyhow",
  "core-graphics 0.23.1",
@@ -2220,7 +2220,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 [[package]]
 name = "screenshots"
 version = "0.8.6"
-source = "git+https://github.com/Originalimoc/screenshots-rs-fix?rev=cdf9f00#cdf9f005947bc86f454f7772bce60ae184b053a2"
+source = "git+https://github.com/Originalimoc/screenshots-rs-fix?rev=e9917e1#e9917e189bbaa1bd29a8f41c78d25e155da93011"
 dependencies = [
  "anyhow",
  "core-graphics 0.22.3",

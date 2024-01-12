@@ -4,6 +4,7 @@ mod translator;
 use translator::TranslateRequest;
 
 use core::str::FromStr;
+use std::time::Instant;
 pub use openssl;
 
 use tesseract::Tesseract;
@@ -152,6 +153,7 @@ fn screenshot_and_ocr(lang: &str, screen_region: &str, output_channel: Sender<St
     };
     let image = screen.capture_area_ignore_area_check(ocr_screen_region.0, ocr_screen_region.1, ocr_screen_region.2, ocr_screen_region.3).unwrap();
     image.save("last_ocr_screenshot.png").unwrap();
+    let ocr_start_time = Instant::now();
     let Ok(mut tess) = Tesseract::new(None, Some(lang)) else {
         eprintln!("Could not initialize tesseract, missing {}.traineddata", lang);
         return;
@@ -162,7 +164,7 @@ fn screenshot_and_ocr(lang: &str, screen_region: &str, output_channel: Sender<St
         return;
     };
     ocr_output_text = ocr_output_text.replace("\n\n", "").replace(' ', "");
-    println!("\nOCR get text:\n{}\n", ocr_output_text);
+    println!("\nOCR get text after {:.2}s:\n{}\n", ocr_start_time.elapsed().as_secs_f64(), ocr_output_text);
     let _ = output_channel.blocking_send(ocr_output_text);
 }
 
