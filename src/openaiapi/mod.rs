@@ -38,23 +38,23 @@ Requirement: Output result translated text directly with no additional info. IF 
 
 #[derive(Debug, serde::Serialize)]
 struct TranslateSrcPayload {
-    role: String,
-    content: String,
+	role: String,
+	content: String,
 }
 
 // Define a struct to deserialize the relevant parts of the JSON.
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct Completion {
-    pub choices: Vec<Choice>,
+	pub choices: Vec<Choice>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Choice {
-    index: usize,
-    pub message: Message,
+	index: usize,
+	pub message: Message,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Message {
-    pub content: String,
+	pub content: String,
 }

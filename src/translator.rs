@@ -19,7 +19,7 @@ pub(crate) async fn translate_openai(api_endpoint: &str, api_key: &Option<String
 			.json(&payload)
 	};
 	let mut es = EventSource::new(http_client)?;
-    let mut concatenated_result = String::new();
+	let mut concatenated_result = String::new();
 	while let Some(event) = es.next().await {
 		match event {
 			Ok(Event::Open) => {
@@ -61,17 +61,17 @@ pub(crate) async fn translate_openai(api_endpoint: &str, api_key: &Option<String
 }
 
 pub struct TranslateRequest {
-    pub content: String,
-    pub src_lang: String,
-    pub target_lang: String,
+	pub content: String,
+	pub src_lang: String,
+	pub target_lang: String,
 }
 
 impl TranslateRequest {
-    pub fn new(content: &str, src_lang: &str, target_lang: &str) -> Self {
-        Self {
-            content: content.to_string(),
-            src_lang: src_lang.to_string(),
-            target_lang: target_lang.to_string(),
-        }
-    }
+	pub fn new(content: &str, src_lang: &str, target_lang: &str) -> Self {
+		Self {
+			content: content.to_string(),
+			src_lang: src_lang.to_string(),
+			target_lang: target_lang.to_string(),
+		}
+	}
 }
