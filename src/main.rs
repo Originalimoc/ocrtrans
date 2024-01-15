@@ -4,6 +4,7 @@ mod translator;
 use translator::TranslateRequest;
 mod overlay;
 use overlay::{create_window, UpdateHandle, WindowChannelMessage};
+mod img_process;
 
 use std::{str::FromStr, time::Duration};
 use std::io::Write;
@@ -199,12 +200,21 @@ fn screenshot_and_ocr(lang: &str, screen_region: &str, output_channel: std::sync
 	};
 	let image = screen.capture_area_ignore_area_check(ocr_screen_region.0, ocr_screen_region.1, ocr_screen_region.2, ocr_screen_region.3).unwrap();
 	image.save("last_ocr_screenshot.png").unwrap();
+
+    let processing_img = image::open("last_ocr_screenshot.png").expect("Failed to open image");
+    let processing_img = processing_img.adjust_contrast(100.0);
+    let processing_img = img_process::filter_pixels(&processing_img, |p| {
+        p[0] == 255 && p[1] == 255 && p[2] == 255
+    });
+    let processing_img = img_process::invert_colors(&(processing_img.into()));
+    processing_img.save("last_ocr_screenshot_processed.png").unwrap();
+
 	let ocr_start_time = Instant::now();
 	let Ok(mut tess) = Tesseract::new(None, Some(lang)) else {
 		eprintln!("Could not initialize tesseract, missing {}.traineddata", lang);
 		return;
 	};
-	tess = tess.set_image("last_ocr_screenshot.png").unwrap();
+	tess = tess.set_image("last_ocr_screenshot_processed.png").unwrap();
 	let Ok(mut ocr_output_text) = tess.get_text() else {
 		eprintln!("Could not perform OCR");
 		return;
