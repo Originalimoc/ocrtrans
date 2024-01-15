@@ -34,8 +34,8 @@ pub fn controller_combo_listener(mut f: impl FnMut()) {
 				continue;
 			}
 		};
-		let key_a_pressed = xstate_get.arrow_down();
-		let key_b_pressed = xstate_get.right_thumb_button();
+		let key_a_pressed = xstate_get.arrow_right();
+		let key_b_pressed = xstate_get.select_button();
 		current_combo_state = match current_combo_state {
 			ControllerState::NotPressed => {
 				if key_b_pressed {

@@ -18,7 +18,7 @@ use notify_rust::Notification;
 use clap::Parser;
 use anyhow::{anyhow, Result};
 
-const EMPTY_STRING_SIGNAL: &str = "								   ";
+const EMPTY_STRING_SIGNAL: &str = "		  			  			   ";
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -155,7 +155,7 @@ async fn main() -> Result<()> {
 		std::process::exit(0);
 	}
 
-	println!("\nInit complete, press {} or D-Pad Down + Right Stick to trigger translation.\n", keyboard_shortcut);
+	println!("\nInit complete, press {} or D-Pad Right + Select(-) to trigger translation.\n", keyboard_shortcut);
 	loop {
 		let mut user_message = String::new();
 		println!("{} Input> ", src_lang);
@@ -167,7 +167,7 @@ async fn main() -> Result<()> {
 		println!("Streaming {} output> \n", target_lang);
 		let (streaming_output_tx, streaming_output_rx) = tokio::sync::mpsc::channel(10);
 		let translation_request = TranslateRequest::new(&user_message, &src_lang, &target_lang);
-		let _ = buffered_display_in_tx_clearer_2.clone().send(String::from(EMPTY_STRING_SIGNAL));
+		let _ = buffered_display_in_tx_clearer_2.send(String::from(EMPTY_STRING_SIGNAL));
 		let (_, Ok(_)) = tokio::join!(async_display_print(streaming_output_rx, false), translator::translate_openai(
 			&api_endpoint,
 			&api_key,
@@ -191,7 +191,7 @@ fn screenshot_and_ocr(lang: &str, screen_region: &str, output_channel: std::sync
 		}
 		screens[0]
 	};
-	println!("Capturing screen info: {screen:?}");
+	// println!("Capturing screen info: {screen:?}");
 	let real_resoltion = ((screen.display_info.width as f64 * screen.display_info.scale_factor as f64) as u32, (screen.display_info.height as f64 * screen.display_info.scale_factor as f64) as u32);
 	let Ok(ocr_screen_region) = convert_screen_region(real_resoltion, screen_region) else {
 		eprintln!("Error: Screen region parsing failed");
