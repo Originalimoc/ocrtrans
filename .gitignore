@@ -9,3 +9,5 @@ target/
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 last_ocr_screenshot.png
+last_ocr_screenshot_og.png
+last_ocr_screenshot_processed.png

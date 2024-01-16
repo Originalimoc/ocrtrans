@@ -12,9 +12,9 @@ pub(crate) fn new_translate_json(request: &TranslateRequest) -> Value {
 		"mode": "instruct",
 		"instruction_template": "Gorilla_Trans",
 		"max_tokens": 200,
-		"temperature": 0.66, //1.35, intel7bv3-2
+		"temperature": 0.3, //1.35, intel7bv3-2
 		"top_p": 0.42, //0.3
-		"top_k": 69, //42
+		"top_k": 42,
 		"repetition_penalty": 1,
 		"stream": true,
 		"messages": vec![
@@ -22,12 +22,12 @@ pub(crate) fn new_translate_json(request: &TranslateRequest) -> Value {
 				role: "user".to_string(),
 				content: format!(
 r#######"
-Translate task: Here is some {} text quoted in ``` to translate to {}, which are ONLY BEFORE and NOT include backtick quote ```, here text:
+Translate task: Here is some {} text quoted in ``` to translate to {}, which are only BEFORE backtick quote, backtick quote itself is NOT included:
 ```
 {}
 ```
 
-Requirement: Output result translated text directly with no additional info. IF there are additional info and sentence you want to say DO NOT reply. DO NOT add ANY additional info in front or in end of the translation. Eg: If it's JP to EN, when I say "Aishiteru", you ONLY reply "I love you."
+Requirement: Output result translated text directly with NO additional info and NO backtick quote."
 "#######,
 					request.src_lang, request.target_lang, content
 				)
