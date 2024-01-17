@@ -22,12 +22,12 @@ pub(crate) fn new_translate_json(request: &TranslateRequest) -> Value {
 				role: "user".to_string(),
 				content: format!(
 r#######"
-Translate task: Here is some {} text quoted in ``` to translate to {}, which are only BEFORE backtick quote, backtick quote itself is NOT included:
+Translate task: Here is some {} text quoted in ``` for translating into {}, which are only INSODE "```"(3 backtick quote), backtick quote itself is NOT included for translation:
 ```
 {}
 ```
 
-Requirement: Output result translated text directly with NO additional info and NO backtick quote."
+Requirement: Output resulting translated text directly with NO additional info and NO backtick quote."
 "#######,
 					request.src_lang, request.target_lang, content
 				)

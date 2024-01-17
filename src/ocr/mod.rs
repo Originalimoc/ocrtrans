@@ -1,8 +1,11 @@
 use std::time::Instant;
+use image::{DynamicImage, Rgba};
 use tesseract::Tesseract;
 use screenshots::Screen;
 use anyhow::{anyhow, Result};
 mod img_process;
+
+const REGION_THRESHOLD: i32 = 1500;
 
 pub fn screenshot_and_ocr(lang: &str, screen_region: &str, output_channel: std::sync::mpsc::SyncSender<String>, tmp_filename: &str) {
 	let screen = {
@@ -25,13 +28,24 @@ pub fn screenshot_and_ocr(lang: &str, screen_region: &str, output_channel: std::
 	let image = screen.capture_area_ignore_area_check(ocr_screen_region.0, ocr_screen_region.1, ocr_screen_region.2, ocr_screen_region.3).unwrap();
 	image.save(format!("{}_og.png", tmp_filename)).unwrap();
 
-    let processing_img = image::open(format!("{}_og.png", tmp_filename)).expect("Failed to open image");
-    let processing_img = processing_img.adjust_contrast(100.0);
-    let processing_img = img_process::filter_pixels(&processing_img, |p| {
-        p[0] == 255 && p[1] == 255 && p[2] == 255
-    });
-    let processing_img = img_process::invert_colors(&(processing_img.into()));
-    processing_img.save(format!("{}_processed.png", tmp_filename)).unwrap();
+	let processing_img = image::open(format!("{}_og.png", tmp_filename)).expect("Failed to open image");
+	let processing_img = processing_img.adjust_contrast(100.0);
+	let img_is_white_bg = img_process::is_white_background(&processing_img);
+	let background_pixel = if img_is_white_bg {
+		Rgba([255, 255, 255, 255])
+	} else {
+		Rgba([0, 0, 0, 255])
+	};
+	let processing_img = img_process::filter_pixels(&processing_img, background_pixel, |p| {
+		if img_is_white_bg {
+			p[0] == 0 && p[1] == 0 && p[2] == 0 // get black text for white bg
+		} else {
+			p[0] == 255 && p[1] == 255 && p[2] == 255 // get white text for black bg
+		}
+	});
+	let result_img = img_process::remove_big_pixel_block(&DynamicImage::ImageRgba8(processing_img), REGION_THRESHOLD);
+
+	result_img.save(format!("{}_processed.png", tmp_filename)).unwrap();
 
 	let ocr_start_time = Instant::now();
 	let Ok(mut tess) = Tesseract::new(None, Some(lang)) else {
