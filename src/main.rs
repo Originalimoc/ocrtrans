@@ -1,4 +1,3 @@
-mod openaiapi;
 mod hotkey;
 mod translator;
 use translator::TranslateRequest;
@@ -167,14 +166,19 @@ async fn main() -> Result<()> {
 		let (streaming_output_tx, streaming_output_rx) = tokio::sync::mpsc::channel(10);
 		let translation_request = TranslateRequest::new(&user_message, &src_lang, &target_lang);
 		let _ = buffered_display_in_tx_clearer_2.send(String::from(EMPTY_STRING_SIGNAL));
-		let (_, Ok(_)) = tokio::join!(async_display_print(streaming_output_rx, false), translator::translate_openai(
+		let (_, translate_result) = tokio::join!(async_display_print(streaming_output_rx, false), translator::translate_openai(
 			&api_endpoint,
 			&api_key,
 			&translation_request,
 			Some(streaming_output_tx),
 			Some(buffered_display_in_tx_tty.clone()),
-		)) else { continue };
-		println!("\n\n/Streaming {} output done\n", target_lang);
+		));
+		match translate_result {
+			Ok(_) => println!("\n\n/Streaming {} output done\n", target_lang),
+			Err(e) => {
+				eprintln!("\n\n/translate_openai failed: {}\n", e)
+			},
+		}
 	}
 }
 

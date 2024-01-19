@@ -1,4 +1,5 @@
-use crate::openaiapi::{Completion, new_translate_json};
+mod openaiapi;
+use openaiapi::{Completion, new_translate_json};
 use std::io::Write;
 use reqwest_eventsource::{Event, EventSource};
 use reqwest::Client;
