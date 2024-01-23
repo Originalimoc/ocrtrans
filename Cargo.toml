@@ -24,8 +24,8 @@ windows = { version = "0.52", features = ["Win32", "Win32_Foundation", "Win32_Gr
 image = "0.24"
 imageproc = "0.23"
 
-# [profile.release]
-# codegen-units = 1
-# lto = true
-# panic = "abort"
-# strip = true
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"
+strip = true

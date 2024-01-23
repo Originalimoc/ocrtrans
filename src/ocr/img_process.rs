@@ -12,7 +12,7 @@ pub fn remove_big_tiny_pixel_block(source_img: &DynamicImage, upper: i32, lower:
 		Rgba([0, 0, 0, 255])
 	};
 
-	let components_img = connected_components(source_img, Connectivity::Four, background_pixel);
+	let components_img = connected_components(source_img, Connectivity::Eight, background_pixel);
 	let (width, height) = components_img.dimensions();
 
 	let mut max_lable = 0;
@@ -110,23 +110,6 @@ where
 		}
 	}
 
-	filtered_img
-}
-
-// Invert colors of the image
-#[allow(dead_code)]
-fn invert_colors(img: &DynamicImage) -> RgbaImage {
-	let (width, height) = img.dimensions();
-	let mut filtered_img = ImageBuffer::new(width, height);
-	img.to_rgba8().enumerate_pixels().for_each(|(x, y, pixel)| {
-		let inverted_pixel = Rgba([
-			255 - pixel[0],
-			255 - pixel[1],
-			255 - pixel[2],
-			pixel[3],
-		]);
-		filtered_img.put_pixel(x, y, inverted_pixel);
-	});
 	filtered_img
 }
 
