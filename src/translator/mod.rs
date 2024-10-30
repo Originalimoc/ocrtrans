@@ -1,63 +1,56 @@
-mod openaiapi;
-use openaiapi::{Completion, new_translate_json};
+use openai::chat::{ChatCompletionMessage, ChatCompletionMessageRole, ChatCompletionDelta};
 use std::io::Write;
-use reqwest_eventsource::{Event, EventSource};
-use reqwest::Client;
 use anyhow::Result;
-use serde_json::Value;
-use futures::StreamExt;
 
-pub(crate) async fn translate_openai(api_endpoint: &str, api_key: &Option<String>, request: &TranslateRequest, steaming_output_async_channel: Option<tokio::sync::mpsc::Sender<String>>, steaming_output_sync_channel: Option<std::sync::mpsc::Sender<String>>) -> Result<String> {
-	let payload = new_translate_json(request);
-	 let http_client = if let Some(api_key) = api_key {
-		Client::new()
-			.post(api_endpoint)
-			.bearer_auth(api_key)
-			.json(&payload)
-	} else {
-		Client::new()
-			.post(api_endpoint)
-			.json(&payload)
-	};
-	let mut es = EventSource::new(http_client)?;
+pub(crate) async fn translate_openai(request: &TranslateRequest, steaming_output_async_channel: Option<tokio::sync::mpsc::Sender<String>>, steaming_output_sync_channel: Option<std::sync::mpsc::Sender<String>>) -> Result<String> {
+	let mut messages = vec![ChatCompletionMessage {
+        role: ChatCompletionMessageRole::System,
+        content: Some("You are a multilingual translator, but mainly focused on video games or visual novels in Japanese.".to_string()),
+        name: None,
+        function_call: None,
+    }];
+
+	messages.push(ChatCompletionMessage {
+		role: ChatCompletionMessageRole::User,
+		content: Some(format!("Translate ```\n{}\n``` to {}, reply translation only", request.content, request.target_lang)),
+		name: None,
+		function_call: None,
+	});
+
+	let mut translation_result_stream = ChatCompletionDelta::builder("gpt-4o", messages.clone())
+		.create_stream()
+		.await
+		.unwrap();
+
 	let mut concatenated_result = String::new();
-	while let Some(event) = es.next().await {
-		match event {
-			Ok(Event::Open) => {
-				// println!("\nStreaming Output:")
-			},
-			Ok(Event::Message(message)) => {
-				let value: Value = serde_json::from_str(&message.data).unwrap();
-				let completion: Completion = serde_json::from_value(value).unwrap();
-				// Loop through the choices and concatenate the message contents
-				for choice in completion.choices {
-					let content = choice.message.content;
-					if !content.replace(['\n', ' '], "").is_empty() {
-						if let Some(ref channel) = steaming_output_sync_channel {
-							if let Err(e) = channel.send(content.clone()) {
-								eprintln!("steaming_output_sync_channel error: {}", e);
-							}
-						}
-						if let Some(ref channel) = steaming_output_async_channel {
-							if let Err(e) = channel.send(content.clone()).await {
-								eprintln!("steaming_output_async_channel error: {}", e);
-							}
-						}
-						let _ = std::io::stdout().flush();
-						concatenated_result.push_str(&content);
+
+	while let Some(delta) = translation_result_stream.recv().await {
+		let choice = &delta.choices[0];
+		// if let Some(role) = &choice.delta.role {
+		// 	print!("{:#?}: ", role);
+		// }
+		if let Some(content) = &choice.delta.content {
+			if !content.replace(['\n', ' '], "").is_empty() {
+				if let Some(ref channel) = steaming_output_sync_channel {
+					if let Err(e) = channel.send(content.clone()) {
+						eprintln!("steaming_output_sync_channel error: {}", e);
 					}
 				}
-			},
-			Err(err) => {
-				es.close();
-				if let reqwest_eventsource::Error::StreamEnded = err {
-					// println!("\n/Streaming Output Done.\n")
-				} else {
-					return Err(err)?;
+				if let Some(ref channel) = steaming_output_async_channel {
+					if let Err(e) = channel.send(content.clone()).await {
+						eprintln!("steaming_output_async_channel error: {}", e);
+					}
 				}
+				let _ = std::io::stdout().flush();
+				concatenated_result.push_str(content);
 			}
 		}
+		// if let Some(_) = &choice.finish_reason {
+		// 	print!("\n");
+		// }
 	}
+
+	concatenated_result.push('\n');
 	Ok(concatenated_result)
 }
 

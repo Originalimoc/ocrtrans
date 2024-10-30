@@ -7,14 +7,17 @@ mod ocr;
 use ocr::screenshot_and_ocr;
 use std::{str::FromStr, time::Duration};
 use std::io::Write;
+use std::env;
 use tokio::task::spawn_blocking;
 use std::time::Instant;
 pub use openssl;
 
+use dotenvy::dotenv;
 use livesplit_hotkey::{Hook, Hotkey, Modifiers, KeyCode};
 use notify_rust::Notification;
 use clap::Parser;
 use anyhow::Result;
+use openai::{set_base_url, set_key};
 
 const EMPTY_STRING_SIGNAL: &str = "		  			  			   ";
 
@@ -26,8 +29,13 @@ struct Args {
 	screen_region: String,
 
 	/// OpenAI API endpoint, need /v1/chat/completions suffix
-	#[arg(long, default_value = "http://172.22.22.172:8788/v1/chat/completions")]
-	api_endpoint: String,
+	//#[arg(long, default_value = "http://172.22.22.172:8788/v1/chat/completions")]
+	#[arg(long, default_value = "https://api.openai.com/v1")]
+	translation_api_endpoint: String,
+
+	/// OpenAI API endpoint, need /v1/chat/completions suffix
+	#[arg(long, default_value = "http://172.22.22.172:5000/extract_text")]
+	ocr_api_endpoint: String,
 
 	/// OpenAI API key, optional if using non-official services
 	#[arg(long)]
@@ -42,7 +50,7 @@ struct Args {
 	target_lang: String,
 
 	/// Default key to trigger a screen translation
-	#[arg(long, default_value = "F6")]
+	#[arg(long, default_value = "F3")]
 	keyboard_shortcut: String,
 
 	/// output rate will be limit to 1000/word_per_sec ms per word if output too fast
@@ -54,28 +62,31 @@ struct Args {
 async fn main() -> Result<()> {
 	let args = Args::parse();
 	let (screen_region,
-		api_endpoint,
-		api_key,
+		translation_api_endpoint,
+		ocr_api_endpoint,
 		src_lang,
 		target_lang,
 		word_per_sec,
 		keyboard_shortcut) = (
 			args.screen_region,
-			args.api_endpoint,
-			args.api_key,
+			args.translation_api_endpoint,
+			args.ocr_api_endpoint,
 			args.src_lang,
 			args.target_lang,
 			args.word_per_sec,
 			args.keyboard_shortcut
 		);
+	dotenv().unwrap();
+	set_key(env::var("OPENAI_KEY").unwrap());
+    set_base_url(translation_api_endpoint.clone());
 
 	let (ocr_channel_tx, ocr_channel_rx) = std::sync::mpsc::sync_channel(10);
 
 	let xinput_hotkey_thread = {
-		let src_lang = src_lang.clone();
 		let screen_region = screen_region.clone();
 		let ocr_channel_tx = ocr_channel_tx.clone();
-		std::thread::spawn(|| hotkey::controller_combo_listener(move || screenshot_and_ocr(&src_lang, &screen_region, ocr_channel_tx.clone(), "last_ocr_screenshot")))
+		let ocr_api_endpoint = ocr_api_endpoint.clone();
+		std::thread::spawn(|| hotkey::controller_combo_listener(move || screenshot_and_ocr(&screen_region, ocr_channel_tx.clone(), &ocr_api_endpoint)))
 	};
 
 	
@@ -89,8 +100,7 @@ async fn main() -> Result<()> {
 		return Ok(());
 	};
 	{
-		let src_lang = src_lang.clone();
-		if hotkeyhook.register(hotkey, move || screenshot_and_ocr(&src_lang, &screen_region, ocr_channel_tx.clone(), "last_ocr_screenshot")).is_err() {
+		if hotkeyhook.register(hotkey, move || screenshot_and_ocr(&screen_region, ocr_channel_tx.clone(), &ocr_api_endpoint)).is_err() {
 			eprintln!("Keyboard hotkey init failed");
 			return Ok(());
 		}
@@ -106,8 +116,6 @@ async fn main() -> Result<()> {
 	let buffered_display_in_tx_tty;
 	let buffered_display_in_tx_clearer_2;
 	{
-		let api_endpoint = api_endpoint.clone();
-		let api_key = api_key.clone();
 		let src_lang = src_lang.clone();
 		let target_lang = target_lang.clone();
 		let (buffered_display_in_tx, buffered_display_in_rx) = std::sync::mpsc::channel();
@@ -130,8 +138,6 @@ async fn main() -> Result<()> {
 					let translation_request = TranslateRequest::new(&ocr_text, &src_lang, &target_lang);
 					let _ = buffered_display_in_tx_clearer_1.send(String::from(EMPTY_STRING_SIGNAL));
 					if let Ok(result) = translator::translate_openai(
-						&api_endpoint,
-						&api_key,
 						&translation_request,
 						None,
 						Some(buffered_display_in_tx.clone())
@@ -167,8 +173,6 @@ async fn main() -> Result<()> {
 		let translation_request = TranslateRequest::new(&user_message, &src_lang, &target_lang);
 		let _ = buffered_display_in_tx_clearer_2.send(String::from(EMPTY_STRING_SIGNAL));
 		let (_, translate_result) = tokio::join!(async_display_print(streaming_output_rx, false), translator::translate_openai(
-			&api_endpoint,
-			&api_key,
 			&translation_request,
 			Some(streaming_output_tx),
 			Some(buffered_display_in_tx_tty.clone()),

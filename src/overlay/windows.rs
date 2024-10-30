@@ -10,7 +10,7 @@ use windows::{
 	},
 };
 
-use screenshots::Screen;
+use xcap::Monitor;
 
 const WM_UPDATE_TEXT: u32 = WM_USER + 1;
 const BG_COLOR: u32 = 0x00101010;
@@ -202,11 +202,11 @@ extern "system" fn window_proc(hwnd: HWND, message: u32, wparam: WPARAM, lparam:
 
 // return 1706 and 150% if failed
 fn get_screen_width_sf() -> (i32, f64) {
-	let Ok(screens) = Screen::all() else {
+	let Ok(screens) = Monitor::all() else {
 		return (1706, 1.5); // 2560/1.5
 	};
 	if screens.is_empty() {
 		return (1706, 1.5); // 2560/1.5
 	};
-	(screens[0].display_info.width as i32, screens[0].display_info.scale_factor as f64)
+	(screens[0].width() as i32, screens[0].scale_factor() as f64)
 }
